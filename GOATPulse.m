@@ -7,7 +7,7 @@ if isempty(itr)
 end
 itr = itr + 1;
 tic
-fprintf('GOATPulse1 Iteration %d\n', itr);
+% fprintf('GOATPulse1 Iteration %d\n', itr);
 
 phi = zeros(length(trgs),1);
 g = zeros(n_har*length(Hs) + 2 * length(Hs), 1);
