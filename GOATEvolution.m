@@ -7,7 +7,7 @@ function [dMdt] = GOATEvolution(t,M,H0,Hs,A,W,P,n_har)
 % end
 % itr = itr + 1;
 % 
-% if mod(itr,1000) == 0
+% if mod(itr,10000) == 0
 %     fprintf('perevol time: %f\n', toc);
 %     fprintf('GOATEvolution Iteration %d\n', itr);
 % end
@@ -28,41 +28,42 @@ end
 
 H = H0;
 for i = 1 : length(Hs)
-    H = H + f(i) * Hs{i};
+    H = H + f(i) .* Hs{i};
 end
      
 % Lt = kron(eye(4),H);
 
-U = reshape( M(1:int32(length(H0)^2),1), size(H0) );
-U = -1i*H*U;
-dMdt(1:int32(length(H0)^2),1) = U(:);
+U = reshape( M(1:int32(length(H)^2),1), size(H) );
 
 
 %% This part related to derivatives with respect to waight matrices
 for k = 1 : length(Hs)
     for m = 1 : n_har
-        pos = ( ( k - 1 ) * n_har + m ) * int32(length(H0)^2);
-        dUdtpkm = reshape( M( pos + 1 : pos + int32(length(H0)^2), 1 ), size(H0) );
+        pos = ( ( k - 1 ) * n_har + m ) * int32(length(H)^2);
+        dUdtpkm = reshape( M( pos + 1 : pos + int32(length(H)^2), 1 ), size(H) );
         dUdtpkm = -1i * ( sin( m * t * W(k) + P(k) ) *  Hs{k} * U +  H * dUdtpkm );
-        dMdt( pos + 1 : pos + int32(length(H0)^2) , 1 ) = dUdtpkm(:);    
+        dMdt( pos + 1 : pos + int32(length(H)^2) , 1 ) = dUdtpkm(:);    
     end
 end
 
 %% This part related to derivatives with respect to fourier base frequencies
 %  for each control
 for k = 1 : length(Hs)
-    pos = ( length(Hs) * n_har + k ) * int32(length(H0)^2);
-    dUdtpk = reshape( M( pos + 1 : pos + int32(length(H0)^2), 1 ), size(H0) );
+    pos = ( length(Hs) * n_har + k ) * int32(length(H)^2);
+    dUdtpk = reshape( M( pos + 1 : pos + int32(length(H)^2), 1 ), size(H) );
     dUdtpk =  -1i * ( f1(k) *  Hs{k} * U +  H * dUdtpk );
-    dMdt( pos + 1 : pos + int32(length(H0)^2), 1 ) = dUdtpk(:);
+    dMdt( pos + 1 : pos + int32(length(H)^2), 1 ) = dUdtpk(:);
 end
 
 for k = 1 : length(Hs)
-    pos = ( length(Hs) * n_har + length(Hs) + k ) * int32(length(H0)^2);
-    dUdtpk = reshape( M( pos + 1 : pos + int32(length(H0)^2), 1 ), size(H0) );
+    pos = ( length(Hs) * n_har + length(Hs) + k ) * int32(length(H)^2);
+    dUdtpk = reshape( M( pos + 1 : pos + int32(length(H)^2), 1 ), size(H) );
     dUdtpk = -1i * ( f2(k) *  Hs{k} * U +  H * dUdtpk );
-    dMdt( pos + 1 : pos + int32(length(H0)^2), 1 ) = dUdtpk(:);
+    dMdt( pos + 1 : pos + int32(length(H)^2), 1 ) = dUdtpk(:);
 end
+
+U = -1i*H*U;
+dMdt(1:int32(length(H)^2),1) = U(:);
 
 end
 

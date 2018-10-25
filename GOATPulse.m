@@ -19,23 +19,23 @@ for i = 1 : length(inis)
     A=reshape(u(1:length(Hs)*n_har,1), length(Hs), n_har);
     W=u(length(Hs)*n_har+1:length(Hs)*n_har+length(Hs),1);
     P=u(length(Hs)*n_har+length(Hs)+1:end,1);
-
+   
     %% solve ode
     clear GOATEvolution;
-    opt = odeset('RelTol',1e-12,'AbsTol',1e-12,'Stats','off');
+    opt = odeset('RelTol',1e-10,'AbsTol',1e-10,'Stats','off');
     [~,M] = ode45(@(t,M) GOATEvolution(t,M,H0,Hs,A,W,P,n_har), tspan, M0, opt);
 
     %% calculate result
 
     U = reshape( M( end, 1:int32(length(U)^2) ), size(H0) ); 
 
-    phi(i,1) = 1 - trace( inis{i} * trgs{i}'* U ) ;
+    phi(i,1) = 1 - trace( inis{i} * trgs{i}'* U );
 
     for k = 1 : length(Hs)
         for m = 1 : n_har
             pos = ( ( k - 1 ) * n_har + m ) * int32(length(U)^2);
             dUpkm = reshape( M( end, pos + 1 : pos + int32(length(U)^2) ), size(H0) );
-            phi0pkm = - real( ( trgs{i}'* U * inis{i} )' / phi(i,1) * (trgs{i}' * dUpkm * inis{i} ) );
+            phi0pkm = - real( phi(i,1)' / abs(phi(i,1)) * trace( inis{i} * trgs{i}' * dUpkm ) ) / length(U);
             g(( k - 1 ) * n_har + m) = g(( k - 1 ) * n_har + m) + phi0pkm;
         end
     end
@@ -43,14 +43,14 @@ for i = 1 : length(inis)
     for k = 1 : length(Hs)
         pos = ( length(Hs) * n_har + k ) * int32(length(U)^2);
         dUpk = reshape( M( end, pos + 1 : pos + int32(length(U)^2) ), size(H0) );
-        phi0pk = - real( ( trgs{i}'* U * inis{i} )' / phi(i,1) * (trgs{i}' * dUpk * inis{i} ) );
+        phi0pk = - real(  phi(i,1)' / abs(phi(i,1)) * trace( inis{i} * trgs{i}' * dUpk ) ) / length(U);
         g(length(Hs) * n_har + k) = g(length(Hs) * n_har + k) + phi0pk;
     end
     
     for k = 1 : length(Hs)
         pos = ( length(Hs) * n_har + length(Hs) + k ) * int32(length(U)^2);
         dUpk = reshape( M( end, pos + 1 : pos + int32(length(U)^2) ), size(H0) );
-        phi0pk = - real( ( trgs{i}'* U * inis{i} )' / phi(i,1) * (trgs{i}' * dUpk * inis{i} ) );
+        phi0pk = - real(  phi(i,1)' / abs(phi(i,1)) * trace( inis{i} * trgs{i}' * dUpk ) ) / length(U);
         g(length(Hs) * n_har + length(Hs) + k) = g(length(Hs) * n_har + length(Hs) + k) + phi0pk;
     end
 
@@ -68,7 +68,7 @@ Phk=exp((u(n_har*length(Hs)+1:n_har*length(Hs)+length(Hs), 1)./h(n_har*length(Hs
 dPhk=2*u(n_har*length(Hs)+1:n_har*length(Hs)+length(Hs), 1)./h(n_har*length(Hs)+1:end, 1) .* (Phk+1);
 dP = cat(1, dPhkm, dPhk, zeros(length(Hs),1));
 
-Fidelity=1-phi0+penaltyl*(sum(sum(Phkm))+sum(Phk));
+Fidelity=phi0+penaltyl*(sum(sum(Phkm))+sum(Phk));
 
 if nargout>1
     g = g./length(inis) - penaltyl .* dP;
