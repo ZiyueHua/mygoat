@@ -7,15 +7,15 @@ if isempty(itr)
 end
 itr = itr + 1;
 tic
-% fprintf('GOATPulse1 Iteration %d\n', itr);
+fprintf('GOATPulse1 Iteration %d\n', itr);
 
 phi = zeros(length(trgs),1);
 g = zeros(n_har*length(Hs) + 2 * length(Hs), 1);
 
 for i = 1 : length(inis)
-    Uini=inis{i};
-    M0=zeros((1+length(Hs)*n_har+2*length(Hs))*length(Uini),1);
-    M0(1:length(Uini),1)=Uini;
+    U=eye(length(H0));
+    M0=zeros((1+length(Hs)*n_har+2*length(Hs))*int32(length(U)^2),1);
+    M0(1:int32(length(U)^2),1)=U(:);
     A=reshape(u(1:length(Hs)*n_har,1), length(Hs), n_har);
     W=u(length(Hs)*n_har+1:length(Hs)*n_har+length(Hs),1);
     P=u(length(Hs)*n_har+length(Hs)+1:end,1);
@@ -27,30 +27,30 @@ for i = 1 : length(inis)
 
     %% calculate result
 
-    Uini = M( length(tspan), 1:length(Uini) ).'; 
+    U = reshape( M( end, 1:int32(length(U)^2) ), size(H0) ); 
 
-    phi(i,1) = trgs{i}'*Uini;
+    phi(i,1) = 1 - trace( inis{i} * trgs{i}'* U ) ;
 
     for k = 1 : length(Hs)
         for m = 1 : n_har
-            pos = ( ( k - 1 ) * n_har + m ) * length(Uini);
-            dUpkmini = M( length(tspan), pos + 1 : pos + length(Uini) ).';
-            phi0pkm = - real( phi(i,1) / abs(phi(i,1)) * trgs{i}'*dUpkmini );
+            pos = ( ( k - 1 ) * n_har + m ) * int32(length(U)^2);
+            dUpkm = reshape( M( end, pos + 1 : pos + int32(length(U)^2) ), size(H0) );
+            phi0pkm = - real( ( trgs{i}'* U * inis{i} )' / phi(i,1) * (trgs{i}' * dUpkm * inis{i} ) );
             g(( k - 1 ) * n_har + m) = g(( k - 1 ) * n_har + m) + phi0pkm;
         end
     end
 
     for k = 1 : length(Hs)
-        pos = ( length(Hs) * n_har + k ) * length(Uini);
-        dUpkini = M( length(tspan), pos + 1 : pos + length(Uini) ).';
-        phi0pk = - real( phi(i,1) / abs(phi(i,1)) * trgs{i}' * dUpkini );
+        pos = ( length(Hs) * n_har + k ) * int32(length(U)^2);
+        dUpk = reshape( M( end, pos + 1 : pos + int32(length(U)^2) ), size(H0) );
+        phi0pk = - real( ( trgs{i}'* U * inis{i} )' / phi(i,1) * (trgs{i}' * dUpk * inis{i} ) );
         g(length(Hs) * n_har + k) = g(length(Hs) * n_har + k) + phi0pk;
     end
     
     for k = 1 : length(Hs)
-        pos = ( length(Hs) * n_har + length(Hs) + k ) * length(Uini);
-        dUpkini = M( length(tspan), pos + 1 : pos + length(Uini) ).';
-        phi0pk = - real( phi(i,1) / abs(phi(i,1)) * trgs{i}' * dUpkini );
+        pos = ( length(Hs) * n_har + length(Hs) + k ) * int32(length(U)^2);
+        dUpk = reshape( M( end, pos + 1 : pos + int32(length(U)^2) ), size(H0) );
+        phi0pk = - real( ( trgs{i}'* U * inis{i} )' / phi(i,1) * (trgs{i}' * dUpk * inis{i} ) );
         g(length(Hs) * n_har + length(Hs) + k) = g(length(Hs) * n_har + length(Hs) + k) + phi0pk;
     end
 
